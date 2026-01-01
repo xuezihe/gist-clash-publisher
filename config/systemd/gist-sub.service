@@ -1,0 +1,10 @@
+[Unit]
+Description=Fetch GitHub Gist and publish static subscription file
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/gist-sub.env
+ExecStart=/opt/gist-sub/fetch_gist.py
+User=root
