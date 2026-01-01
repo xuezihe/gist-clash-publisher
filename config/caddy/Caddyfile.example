@@ -1,12 +1,13 @@
 sub.example.com {
-    @sub path /<随机路径>/proxies.yaml
-
-    basicauth @sub {
-        user JDJhJDE0JHc2Z3...  # 用 caddy hash-password 生成
-    }
-
     root * /opt/gist-clash-publisher/data/sub
-    file_server
+
+    @sub path /<随机路径>/proxies.yaml
+    handle @sub {
+        basicauth {
+            user JDJhJDE0JHc2Z3...  # 用 caddy hash-password 生成
+        }
+        file_server
+    }
 
     handle {
         respond 404

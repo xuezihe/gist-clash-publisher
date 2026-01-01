@@ -61,6 +61,18 @@ python3 src/fetch_gist.py
 - 字段包含：`last_attempt_ts`、`last_success_ts`、`status`、`last_error`、`etag`、`sha256`、`bytes`、`duration_ms`
 - 运行日志为 JSON 格式，systemd 下可用 `journalctl -u gist-sub.service` 查看
 
+文件与路径一览
+-------------
+- 应用根目录：`/opt/gist-clash-publisher`
+- 环境变量：`/opt/gist-clash-publisher/config/gist-sub.env`
+- 输出目录：`/opt/gist-clash-publisher/data/sub/<PATH_TOKEN>/`
+- 订阅文件：`/opt/gist-clash-publisher/data/sub/<PATH_TOKEN>/<OUTPUT_NAME>`
+- 状态文件：`/opt/gist-clash-publisher/data/sub/<PATH_TOKEN>/status.json`
+- 凭据文件：`/opt/gist-clash-publisher/credentials.md`
+- Caddy 生成配置：`/opt/gist-clash-publisher/config/caddy/Caddyfile.generated`
+- systemd 配置：`/etc/systemd/system/gist-sub.service`、`/etc/systemd/system/gist-sub.timer`
+- 日志位置：systemd journal（`journalctl -u gist-sub.service`）
+
 部署（推荐路径）
 --------------
 1) 克隆仓库：
@@ -110,11 +122,14 @@ Caddy/Nginx 的 `root` 需要指向 `OUTPUT_BASE`（默认 `/opt/gist-clash-publ
 caddy hash-password --plaintext '你的密码'
 ```
 
-把生成的 hash 填入 `/etc/caddy/Caddyfile` 的 `basicauth` 块中，并设置你的用户名：
+把生成的 hash 填入 `/etc/caddy/Caddyfile` 的 `handle @sub` 区块中，并设置你的用户名：
 
 ```
-basicauth @sub {
-    user <hash>
+handle @sub {
+    basicauth {
+        user <hash>
+    }
+    file_server
 }
 ```
 

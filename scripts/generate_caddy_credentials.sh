@@ -73,9 +73,13 @@ Subscription URL:
 ${subscription_url}
 
 Caddyfile snippet:
+root * ${output_base}
 @sub path /${path_token}/${output_name}
-basicauth @sub {
-    ${username} ${hash}
+handle @sub {
+    basicauth {
+        ${username} ${hash}
+    }
+    file_server
 }
 "
 
@@ -94,14 +98,15 @@ fi
 
 cat > "$caddyfile_path" <<EOF
 ${host} {
-    @sub path /${path_token}/${output_name}
-
-    basicauth @sub {
-        ${username} ${hash}
-    }
-
     root * ${output_base}
-    file_server
+
+    @sub path /${path_token}/${output_name}
+    handle @sub {
+        basicauth {
+            ${username} ${hash}
+        }
+        file_server
+    }
 
     handle {
         respond 404
