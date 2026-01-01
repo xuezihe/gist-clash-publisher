@@ -1,4 +1,4 @@
-下面给你一套在 **Debian 12** 上很“工程化”、可维护的方案：**Python 定时拉取 GitHub Gist → 原子写入到 web root → 用 Nginx 或 Caddy 以 Basic Auth + 随机路径对外提供静态文件**。你后续在别处只需要订阅一个固定 URL（带用户名密码 + 随机路径）。
+下面给你一套在 **Debian 12** 上很“工程化”、可维护且**模块化**的方案：**Python 定时拉取 GitHub Gist → 原子写入到 web root → 用 Nginx 或 Caddy 以 Basic Auth + 随机路径对外提供静态文件**。你后续在别处只需要订阅一个固定 URL（带用户名密码 + 随机路径）。
 
 ---
 
@@ -36,6 +36,94 @@
    * Basic Auth
    * HTTPS（Caddy 自动申请证书；Nginx 用 certbot 也行）
    * 禁止目录列表/只暴露你想暴露的路径
+
+---
+
+## 模块化设计（为后续功能预留清晰扩展点）
+
+为了方便在 MVP 上线后按 `memory-bank/backlog.md` 逐步增强，建议从一开始就明确**模块边界**与**配置入口**：
+
+### 目录结构（建议）
+
+```
+/opt/gist-sub/
+  fetch_gist.py            # MVP 单文件脚本（后续可拆分模块）
+  lib/                     # 后续扩展模块的容器（校验/多租户/状态落盘等）
+    validators.py
+    registry.py
+    status.py
+  templates/               # 过期占位/健康检查等模板
+    expired_proxies.yaml
+```
+
+### 最小 lib/ 骨架（占位调用，不改变 MVP 逻辑）
+
+在 MVP 阶段也可以先“预留模块位置”，保持主流程可读，并为后续 F1/F2 直接落位：
+
+```
+/opt/gist-sub/
+  fetch_gist.py
+  lib/
+    validators.py
+    registry.py
+    status.py
+```
+
+`validators.py`（占位）：
+
+```python
+def validate_content(raw: bytes) -> tuple[bool, str]:
+    # MVP: 仅占位，始终通过
+    return True, ""
+```
+
+`status.py`（占位）：
+
+```python
+def record_status(status_path: str, payload: dict) -> None:
+    # MVP: 仅占位，不落盘
+    return None
+```
+
+`registry.py`（占位）：
+
+```python
+def load_registry(path: str) -> list[dict]:
+    # MVP: 单实例时可以返回空或单条配置占位
+    return []
+```
+
+`fetch_gist.py` 中的最小调用点（伪代码）：
+
+```python
+registry = load_registry("/etc/gist-sub.users.json")
+# MVP 单租户时可忽略 registry，或 fallback 到 env 配置
+
+ok, reason = validate_content(raw)
+if not ok:
+    record_status(status_path, {"status": "invalid", "reason": reason})
+    return 1
+
+record_status(status_path, {"status": "success", "bytes": len(raw)})
+atomic_write(out_path, raw)
+```
+
+这样后续做 F1（内容校验）/F2（状态落盘）时，只需要替换 `validators.py` / `status.py` 的内部实现，不改主流程结构。
+
+### 关键扩展点（对应 backlog 方向）
+
+* **内容校验（F1）**：在写盘前加 `validate_content()`。
+* **状态落盘（F2）**：统一由 `status.py` 管理 `status.json`。
+* **多租户（F3）**：引入 `registry.py` 读取 `users.json/yaml`，对每个用户循环更新。
+* **访问控制（F4）**：交给 Nginx/Caddy 层的 allowlist/geo 配置。
+
+### 配置分层（可读性与可扩展性）
+
+* **基础配置**：`/etc/gist-sub.env`（MVP）
+* **多租户配置**：`/etc/gist-sub.users.json`（后续）
+* **模板文件**：`/opt/gist-sub/templates/*`（后续）
+
+> 这样每个新功能都能有“明确的落点”：要么是 `lib/` 的新模块，要么是 `/etc/` 的新配置，不会把逻辑塞进一个大脚本里难维护。
 
 ---
 
