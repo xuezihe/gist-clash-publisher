@@ -6,5 +6,6 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/gist-sub.env
-ExecStart=/opt/gist-sub/fetch_gist.py
+WorkingDirectory=/opt/gist-clash-publisher
+ExecStart=/usr/bin/python3 /opt/gist-clash-publisher/src/fetch_gist.py
 User=root

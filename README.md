@@ -55,23 +55,20 @@ python3 src/fetch_gist.py
 1) 克隆仓库：
 
 ```bash
-git clone https://github.com/xuezihe/gist-clash-publisher
-cd gist-clash-publisher
+sudo git clone https://github.com/xuezihe/gist-clash-publisher /opt/gist-clash-publisher
+cd /opt/gist-clash-publisher
 ```
 
-2) 部署脚本到目标路径：
+2) 确认 systemd service 中的仓库路径与实际一致（默认 `/opt/gist-clash-publisher`）：
 
 ```bash
-sudo mkdir -p /opt/gist-sub
-sudo cp src/fetch_gist.py /opt/gist-sub/
-sudo chmod +x /opt/gist-sub/fetch_gist.py
+sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 ```
 
 3) 配置 systemd 定时器：
 
 ```bash
 ./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
-sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
