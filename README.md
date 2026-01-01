@@ -50,6 +50,12 @@ set -a; source /etc/gist-sub.env; set +a
 python3 src/fetch_gist.py
 ```
 
+状态与日志（F2）
+---------------
+- 状态文件：`/var/www/sub/<PATH_TOKEN>/status.json`
+- 字段包含：`last_attempt_ts`、`last_success_ts`、`status`、`last_error`、`etag`、`sha256`、`bytes`、`duration_ms`
+- 运行日志为 JSON 格式，systemd 下可用 `journalctl -u gist-sub.service` 查看
+
 部署（推荐路径）
 --------------
 1) 克隆仓库：
@@ -80,6 +86,8 @@ sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
+
+`gist-sub.service` 已内置日志限速（systemd rate limit），如需调整可修改 `LogRateLimitIntervalSec` 与 `LogRateLimitBurst`。
 
 5) 配置静态服务（Caddy 或 Nginx）
 
