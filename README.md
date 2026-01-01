@@ -95,6 +95,33 @@ sudo systemctl enable --now gist-sub.timer
 
 ```bash
 sudo apt install -y caddy
+```
+
+设置 Caddy Basic Auth 账号密码：
+
+```bash
+caddy hash-password --plaintext '你的密码'
+```
+
+把生成的 hash 填入 `/etc/caddy/Caddyfile` 的 `basicauth` 块中，并设置你的用户名：
+
+```
+basicauth @sub {
+    user <hash>
+}
+```
+
+也可以用脚本生成账号/密码/订阅 URL，并保存到服务器上的 Markdown 文件：
+
+```bash
+./scripts/generate_caddy_credentials.sh example.com
+```
+
+默认会读取 `/etc/gist-sub.env`，并保存到 `/etc/gist-sub-credentials.md`（包含明文密码，权限为 600）。
+
+然后配置 Caddyfile 并 reload：
+
+```bash
 sudo cp config/caddy/Caddyfile.example /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
