@@ -59,13 +59,21 @@ sudo git clone https://github.com/xuezihe/gist-clash-publisher /opt/gist-clash-p
 cd /opt/gist-clash-publisher
 ```
 
-2) 确认 systemd service 中的仓库路径与实际一致（默认 `/opt/gist-clash-publisher`）：
+2) 配置环境变量：
+
+```bash
+sudo cp config/gist-sub.env.example /etc/gist-sub.env
+sudo chmod 600 /etc/gist-sub.env
+sudo nano /etc/gist-sub.env
+```
+
+3) 确认 systemd service 中的仓库路径与实际一致（默认 `/opt/gist-clash-publisher`）：
 
 ```bash
 sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 ```
 
-3) 配置 systemd 定时器：
+4) 配置 systemd 定时器：
 
 ```bash
 ./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
@@ -73,7 +81,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
 
-4) 配置静态服务（Caddy 或 Nginx）
+5) 配置静态服务（Caddy 或 Nginx）
 
 推荐 Caddy（自动 HTTPS）：
 
@@ -93,7 +101,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-5) HTTPS
+6) HTTPS
 - Caddy 自动签发证书
 - Nginx 需要自行配置 certbot
 
