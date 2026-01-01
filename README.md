@@ -52,7 +52,14 @@ python3 src/fetch_gist.py
 
 部署（推荐路径）
 --------------
-1) 部署脚本到目标路径：
+1) 克隆仓库：
+
+```bash
+git clone https://github.com/xuezihe/gist-clash-publisher
+cd gist-clash-publisher
+```
+
+2) 部署脚本到目标路径：
 
 ```bash
 sudo mkdir -p /opt/gist-sub
@@ -60,7 +67,7 @@ sudo cp src/fetch_gist.py /opt/gist-sub/
 sudo chmod +x /opt/gist-sub/fetch_gist.py
 ```
 
-2) 配置 systemd 定时器：
+3) 配置 systemd 定时器：
 
 ```bash
 ./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
@@ -69,7 +76,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
 
-3) 配置静态服务（Caddy 或 Nginx）
+4) 配置静态服务（Caddy 或 Nginx）
 
 推荐 Caddy（自动 HTTPS）：
 
@@ -89,7 +96,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-4) HTTPS
+5) HTTPS
 - Caddy 自动签发证书
 - Nginx 需要自行配置 certbot
 
