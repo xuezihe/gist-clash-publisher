@@ -100,13 +100,26 @@ sudo systemctl reload nginx
 - Caddy 自动签发证书
 - Nginx 需要自行配置 certbot
 
+订阅 URL
+--------
+订阅地址由域名（或 IP）+ 随机路径 + 文件名组成：
+
+```
+https://<user>:<pass>@<host>/<PATH_TOKEN>/<OUTPUT_NAME>
+```
+
+示例：
+```
+https://user:pass@sub.example.com/a1b2c3d4e5f6/proxies.yaml
+```
+
+其中：
+- `PATH_TOKEN` 来自 `/etc/gist-sub.env`
+- `OUTPUT_NAME` 来自 `/etc/gist-sub.env`
+- `<host>` 来自 Caddy/Nginx 的站点配置
+
 安全建议
 --------
 - Basic Auth 必须在 HTTPS 下使用
 - URL 中包含用户名密码可能出现在日志中，注意访问日志与代理配置
-
-更多设计与后续路线
-------------------
-- 需求与设计：`memory-bank/prd.md`
-- 实现计划：`memory-bank/03-Implementation-Plan.md`
-- 上线检查清单：`memory-bank/04-MVP-Launch-Checklist.md`
+- 如果只用 IP，公有 CA 通常无法签发证书；可用域名、或自签证书并在客户端信任
