@@ -28,7 +28,7 @@ gist-clash-publisher
 复制示例配置并修改：
 
 ```bash
-cp config/gist-sub.env.example /etc/gist-sub.env
+sudo cp config/gist-sub.env.example /etc/gist-sub.env
 sudo chmod 600 /etc/gist-sub.env
 sudo nano /etc/gist-sub.env
 ```
@@ -82,7 +82,7 @@ sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 4) 配置 systemd 定时器：
 
 ```bash
-./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
+sh ./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
@@ -111,18 +111,18 @@ basicauth @sub {
 }
 ```
 
-也可以用脚本生成账号/密码/订阅 URL，并保存到服务器上的 Markdown 文件：
+也可以用脚本生成账号/密码/订阅 URL，并保存到服务器上的 Markdown 文件，同时生成 Caddyfile 到项目内：
 
 ```bash
-./scripts/generate_caddy_credentials.sh example.com
+sh ./scripts/generate_caddy_credentials.sh example.com
 ```
 
-默认会读取 `/etc/gist-sub.env`，并保存到 `/etc/gist-sub-credentials.md`（包含明文密码，权限为 600）。
+默认会读取 `/etc/gist-sub.env`，保存到 `/etc/gist-sub-credentials.md`（包含明文密码，权限为 600），并写入 `config/caddy/Caddyfile.generated`。
 
-然后配置 Caddyfile 并 reload：
+打开 `/etc/gist-sub-credentials.md` 获取订阅 URL，复制生成的 Caddyfile，再 reload Caddy：
 
 ```bash
-sudo cp config/caddy/Caddyfile.example /etc/caddy/Caddyfile
+sudo cp config/caddy/Caddyfile.generated /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
@@ -157,6 +157,7 @@ https://user:pass@sub.example.com/a1b2c3d4e5f6/proxies.yaml
 - `PATH_TOKEN` 来自 `/etc/gist-sub.env`
 - `OUTPUT_NAME` 来自 `/etc/gist-sub.env`
 - `<host>` 来自 Caddy/Nginx 的站点配置
+使用脚本生成账号时，订阅 URL 会写入 `/etc/gist-sub-credentials.md`。
 
 安全建议
 --------

@@ -4,9 +4,10 @@ set -eu
 host="${1:-}"
 username="${2:-user}"
 output_file="${3:-/etc/gist-sub-credentials.md}"
+caddyfile_path="${4:-config/caddy/Caddyfile.generated}"
 
 if [ -z "$host" ]; then
-  echo "Usage: $0 <host> [username] [output_md]" >&2
+  echo "Usage: $0 <host> [username] [output_md] [caddyfile_path]" >&2
   exit 1
 fi
 
@@ -26,6 +27,7 @@ set +a
 
 path_token="${PATH_TOKEN:-}"
 output_name="${OUTPUT_NAME:-}"
+output_base="${OUTPUT_BASE:-/var/www/sub}"
 
 if [ -z "$path_token" ]; then
   echo "Missing PATH_TOKEN in /etc/gist-sub.env" >&2
@@ -59,6 +61,7 @@ subscription_url="https://${username}:${password}@${host}/${path_token}/${output
 content="# Subscription Credentials
 
 Host: ${host}
+Output base: ${output_base}
 Username: ${username}
 Password: ${password}
 
@@ -75,4 +78,22 @@ basicauth @sub {
 printf "%s" "$content" > "$output_file"
 chmod 600 "$output_file"
 
+cat > "$caddyfile_path" <<EOF
+${host} {
+    @sub path /${path_token}/${output_name}
+
+    basicauth @sub {
+        ${username} ${hash}
+    }
+
+    root * ${output_base}
+    file_server
+
+    handle {
+        respond 404
+    }
+}
+EOF
+
 echo "Saved: $output_file"
+echo "Generated: $caddyfile_path"
