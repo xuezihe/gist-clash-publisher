@@ -52,7 +52,8 @@ def main() -> int:
     gist_file = env("GIST_FILE")
     token = env("GITHUB_TOKEN")
 
-    output_base = pathlib.Path(env("OUTPUT_BASE", "/var/www/sub"))
+    default_output_base = pathlib.Path(__file__).resolve().parents[1] / "data" / "sub"
+    output_base = pathlib.Path(env("OUTPUT_BASE", str(default_output_base)))
     path_token = env("PATH_TOKEN")
     if not path_token:
         log_event(

@@ -27,5 +27,11 @@ Thumbs.db
 .env
 .env.*
 
+# Project local runtime data
+config/gist-sub.env
+config/caddy/Caddyfile.generated
+credentials.md
+data/
+
 # docs
 memory-bank/*

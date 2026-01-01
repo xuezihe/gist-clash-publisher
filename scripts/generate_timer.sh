@@ -1,19 +1,24 @@
 #!/bin/sh
 set -eu
 
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+
 env_file="${1:-}"
 output_file="${2:-}"
 
 if [ -z "$env_file" ]; then
-  if [ -f "config/gist-sub.env.example" ]; then
-    env_file="config/gist-sub.env.example"
+  if [ -f "$repo_root/config/gist-sub.env" ]; then
+    env_file="$repo_root/config/gist-sub.env"
+  elif [ -f "$repo_root/config/gist-sub.env.example" ]; then
+    env_file="$repo_root/config/gist-sub.env.example"
   else
-    env_file="/etc/gist-sub.env"
+    env_file=""
   fi
 fi
 
 if [ -z "$output_file" ]; then
-  output_file="config/systemd/gist-sub.timer"
+  output_file="$repo_root/config/systemd/gist-sub.timer"
 fi
 
 if [ ! -f "$env_file" ]; then
@@ -42,6 +47,11 @@ WantedBy=timers.target
 if [ "$output_file" = "-" ]; then
   printf "%s" "$content"
   exit 0
+fi
+
+output_dir="$(dirname "$output_file")"
+if [ -n "$output_dir" ]; then
+  mkdir -p "$output_dir"
 fi
 
 printf "%s" "$content" > "$output_file"

@@ -1,18 +1,22 @@
 #!/bin/sh
 set -eu
 
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+
 host="${1:-}"
 username="${2:-user}"
-output_file="${3:-/etc/gist-sub-credentials.md}"
-caddyfile_path="${4:-config/caddy/Caddyfile.generated}"
+output_file="${3:-$repo_root/credentials.md}"
+caddyfile_path="${4:-$repo_root/config/caddy/Caddyfile.generated}"
+env_file="${ENV_FILE:-$repo_root/config/gist-sub.env}"
 
 if [ -z "$host" ]; then
   echo "Usage: $0 <host> [username] [output_md] [caddyfile_path]" >&2
   exit 1
 fi
 
-if [ ! -f /etc/gist-sub.env ]; then
-  echo "Missing /etc/gist-sub.env" >&2
+if [ ! -f "$env_file" ]; then
+  echo "Missing env file: $env_file" >&2
   exit 1
 fi
 
@@ -22,20 +26,20 @@ if ! command -v caddy >/dev/null 2>&1; then
 fi
 
 set -a
-. /etc/gist-sub.env
+. "$env_file"
 set +a
 
 path_token="${PATH_TOKEN:-}"
 output_name="${OUTPUT_NAME:-}"
-output_base="${OUTPUT_BASE:-/var/www/sub}"
+output_base="${OUTPUT_BASE:-$repo_root/data/sub}"
 
 if [ -z "$path_token" ]; then
-  echo "Missing PATH_TOKEN in /etc/gist-sub.env" >&2
+  echo "Missing PATH_TOKEN in $env_file" >&2
   exit 1
 fi
 
 if [ -z "$output_name" ]; then
-  echo "Missing OUTPUT_NAME in /etc/gist-sub.env" >&2
+  echo "Missing OUTPUT_NAME in $env_file" >&2
   exit 1
 fi
 
@@ -75,8 +79,18 @@ basicauth @sub {
 }
 "
 
+output_dir="$(dirname "$output_file")"
+if [ -n "$output_dir" ]; then
+  mkdir -p "$output_dir"
+fi
+
 printf "%s" "$content" > "$output_file"
 chmod 600 "$output_file"
+
+output_dir="$(dirname "$caddyfile_path")"
+if [ -n "$output_dir" ]; then
+  mkdir -p "$output_dir"
+fi
 
 cat > "$caddyfile_path" <<EOF
 ${host} {

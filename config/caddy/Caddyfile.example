@@ -5,7 +5,7 @@ sub.example.com {
         user JDJhJDE0JHc2Z3...  # 用 caddy hash-password 生成
     }
 
-    root * /var/www/sub
+    root * /opt/gist-clash-publisher/data/sub
     file_server
 
     handle {

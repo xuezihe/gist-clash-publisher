@@ -2,7 +2,7 @@ server {
     listen 80;
     server_name sub.example.com;
 
-    root /var/www/sub;
+    root /opt/gist-clash-publisher/data/sub;
 
     location = /<随机路径>/proxies.yaml {
         auth_basic "Subscription";

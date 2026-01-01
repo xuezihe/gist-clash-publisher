@@ -1,12 +1,12 @@
 gist-clash-publisher
 ====================
 
-一个可部署在 Debian 12 的小工具：定时从 GitHub Gist 拉取订阅文件，原子写入到 Web 根目录，并通过 Caddy/Nginx + Basic Auth 暴露为固定订阅 URL。
+一个可部署在 Debian 12 的小工具：定时从 GitHub Gist 拉取订阅文件，原子写入到应用目录的数据区，并通过 Caddy/Nginx + Basic Auth 暴露为固定订阅 URL。
 
 功能概览
 --------
 - 定时拉取 Gist（支持 private gist，支持 ETag 增量）
-- 原子写入到 `/var/www/sub/<PATH_TOKEN>/proxies.yaml`
+- 原子写入到 `/opt/gist-clash-publisher/data/sub/<PATH_TOKEN>/proxies.yaml`
 - Basic Auth + HTTPS 对外提供订阅
 - 预留模块化扩展点（内容校验 / 状态落盘 / 多租户）
 
@@ -15,8 +15,11 @@ gist-clash-publisher
 - `src/fetch_gist.py`：主脚本
 - `src/lib/`：占位模块（validators/status/registry）
 - `config/gist-sub.env.example`：环境变量示例
+- `config/gist-sub.env`：实际使用的环境变量配置
 - `config/systemd/`：systemd service/timer 模板
 - `config/caddy/`、`config/nginx/`：静态服务配置模板
+- `data/sub/`：输出目录（订阅文件与 status.json）
+- `credentials.md`：生成的订阅凭据（包含明文密码）
 
 环境与依赖
 ----------
@@ -28,10 +31,12 @@ gist-clash-publisher
 复制示例配置并修改：
 
 ```bash
-sudo cp config/gist-sub.env.example /etc/gist-sub.env
-sudo chmod 600 /etc/gist-sub.env
-sudo nano /etc/gist-sub.env
+sudo cp config/gist-sub.env.example config/gist-sub.env
+sudo chmod 600 config/gist-sub.env
+sudo nano config/gist-sub.env
 ```
+
+`config/gist-sub.env` 包含敏感信息，已加入 `.gitignore`，不要提交到仓库。
 
 必须配置：
 - `GIST_ID`
@@ -46,13 +51,13 @@ sudo nano /etc/gist-sub.env
 本地运行（验证）
 ---------------
 ```bash
-set -a; source /etc/gist-sub.env; set +a
+set -a; source config/gist-sub.env; set +a
 python3 src/fetch_gist.py
 ```
 
 状态与日志（F2）
 ---------------
-- 状态文件：`/var/www/sub/<PATH_TOKEN>/status.json`
+- 状态文件：`/opt/gist-clash-publisher/data/sub/<PATH_TOKEN>/status.json`
 - 字段包含：`last_attempt_ts`、`last_success_ts`、`status`、`last_error`、`etag`、`sha256`、`bytes`、`duration_ms`
 - 运行日志为 JSON 格式，systemd 下可用 `journalctl -u gist-sub.service` 查看
 
@@ -68,9 +73,9 @@ cd /opt/gist-clash-publisher
 2) 配置环境变量：
 
 ```bash
-sudo cp config/gist-sub.env.example /etc/gist-sub.env
-sudo chmod 600 /etc/gist-sub.env
-sudo nano /etc/gist-sub.env
+sudo cp config/gist-sub.env.example config/gist-sub.env
+sudo chmod 600 config/gist-sub.env
+sudo nano config/gist-sub.env
 ```
 
 3) 确认 systemd service 中的仓库路径与实际一致（默认 `/opt/gist-clash-publisher`）：
@@ -82,7 +87,7 @@ sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 4) 配置 systemd 定时器：
 
 ```bash
-sh ./scripts/generate_timer.sh /etc/gist-sub.env /etc/systemd/system/gist-sub.timer
+sudo sh ./scripts/generate_timer.sh config/gist-sub.env /etc/systemd/system/gist-sub.timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now gist-sub.timer
 ```
@@ -96,6 +101,8 @@ sudo systemctl enable --now gist-sub.timer
 ```bash
 sudo apt install -y caddy
 ```
+
+Caddy/Nginx 的 `root` 需要指向 `OUTPUT_BASE`（默认 `/opt/gist-clash-publisher/data/sub`）。
 
 设置 Caddy Basic Auth 账号密码：
 
@@ -117,9 +124,9 @@ basicauth @sub {
 sh ./scripts/generate_caddy_credentials.sh example.com
 ```
 
-默认会读取 `/etc/gist-sub.env`，保存到 `/etc/gist-sub-credentials.md`（包含明文密码，权限为 600），并写入 `config/caddy/Caddyfile.generated`。
+默认会读取 `/opt/gist-clash-publisher/config/gist-sub.env`，保存到 `/opt/gist-clash-publisher/credentials.md`（包含明文密码，权限为 600），并写入 `config/caddy/Caddyfile.generated`。
 
-打开 `/etc/gist-sub-credentials.md` 获取订阅 URL，复制生成的 Caddyfile，再 reload Caddy：
+打开 `/opt/gist-clash-publisher/credentials.md` 获取订阅 URL，复制生成的 Caddyfile，再 reload Caddy：
 
 ```bash
 sudo cp config/caddy/Caddyfile.generated /etc/caddy/Caddyfile
@@ -154,10 +161,10 @@ https://user:pass@sub.example.com/a1b2c3d4e5f6/proxies.yaml
 ```
 
 其中：
-- `PATH_TOKEN` 来自 `/etc/gist-sub.env`
-- `OUTPUT_NAME` 来自 `/etc/gist-sub.env`
+- `PATH_TOKEN` 来自 `/opt/gist-clash-publisher/config/gist-sub.env`
+- `OUTPUT_NAME` 来自 `/opt/gist-clash-publisher/config/gist-sub.env`
 - `<host>` 来自 Caddy/Nginx 的站点配置
-使用脚本生成账号时，订阅 URL 会写入 `/etc/gist-sub-credentials.md`。
+使用脚本生成账号时，订阅 URL 会写入 `/opt/gist-clash-publisher/credentials.md`。
 
 安全建议
 --------
