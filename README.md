@@ -73,6 +73,22 @@ python3 src/fetch_gist.py
 - systemd 配置：`/etc/systemd/system/gist-sub.service`、`/etc/systemd/system/gist-sub.timer`
 - 日志位置：systemd journal（`journalctl -u gist-sub.service`）
 
+Q&A
+---
+Q: 访问订阅 URL 返回 403？
+
+A:
+- 403 通常是 Web 服务读不到文件。确认目录与文件权限（目录 755、文件 644）。
+- 执行一次修复权限：
+
+```bash
+sudo chmod 755 /opt /opt/gist-clash-publisher /opt/gist-clash-publisher/data /opt/gist-clash-publisher/data/sub
+sudo find /opt/gist-clash-publisher/data/sub -type d -exec chmod 755 {} \;
+sudo find /opt/gist-clash-publisher/data/sub -type f -exec chmod 644 {} \;
+```
+
+- 若希望新文件默认可读，`gist-sub.service` 已设置 `UMask=022`。
+
 部署（推荐路径）
 --------------
 1) 克隆仓库：
@@ -96,7 +112,16 @@ sudo nano config/gist-sub.env
 sudo cp config/systemd/gist-sub.service /etc/systemd/system/
 ```
 
-4) 配置 systemd 定时器：
+4) 准备输出目录权限（供 Caddy/Nginx 读取）：
+
+```bash
+sudo mkdir -p /opt/gist-clash-publisher/data/sub
+sudo chmod 755 /opt/gist-clash-publisher/data/sub
+```
+
+`gist-sub.service` 默认使用 `UMask=022`，确保新生成的目录/文件对 Web 服务可读。
+
+5) 配置 systemd 定时器：
 
 ```bash
 sudo sh ./scripts/generate_timer.sh config/gist-sub.env /etc/systemd/system/gist-sub.timer
@@ -106,7 +131,7 @@ sudo systemctl enable --now gist-sub.timer
 
 `gist-sub.service` 已内置日志限速（systemd rate limit），如需调整可修改 `LogRateLimitIntervalSec` 与 `LogRateLimitBurst`。
 
-5) 配置静态服务（Caddy 或 Nginx）
+6) 配置静态服务（Caddy 或 Nginx）
 
 推荐 Caddy（自动 HTTPS）：
 
@@ -158,7 +183,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-6) HTTPS
+7) HTTPS
 - Caddy 自动签发证书
 - Nginx 需要自行配置 certbot
 

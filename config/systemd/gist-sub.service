@@ -9,5 +9,6 @@ EnvironmentFile=/opt/gist-clash-publisher/config/gist-sub.env
 WorkingDirectory=/opt/gist-clash-publisher
 ExecStart=/usr/bin/python3 /opt/gist-clash-publisher/src/fetch_gist.py
 User=root
+UMask=022
 LogRateLimitIntervalSec=1min
 LogRateLimitBurst=100
