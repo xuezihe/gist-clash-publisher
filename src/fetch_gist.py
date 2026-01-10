@@ -35,6 +35,7 @@ def atomic_write(path: pathlib.Path, data: bytes) -> None:
         os.fsync(temp_file.fileno())
         temp_name = temp_file.name
     os.replace(temp_name, str(path))
+    os.chmod(path, 0o644)
 
 
 def main() -> int:
