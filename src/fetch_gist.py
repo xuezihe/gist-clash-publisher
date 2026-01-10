@@ -28,6 +28,11 @@ def http_get(url: str, headers: dict[str, str]) -> tuple[int, dict[str, str], by
 
 
 def atomic_write(path: pathlib.Path, data: bytes) -> None:
+    existing_mode: Optional[int] = None
+    try:
+        existing_mode = path.stat().st_mode
+    except FileNotFoundError:
+        existing_mode = None
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=str(path.parent), delete=False) as temp_file:
         temp_file.write(data)
@@ -35,7 +40,8 @@ def atomic_write(path: pathlib.Path, data: bytes) -> None:
         os.fsync(temp_file.fileno())
         temp_name = temp_file.name
     os.replace(temp_name, str(path))
-    os.chmod(path, 0o644)
+    target_mode = (existing_mode & 0o777) if existing_mode is not None else 0o644
+    os.chmod(path, target_mode)
 
 
 def main() -> int:
